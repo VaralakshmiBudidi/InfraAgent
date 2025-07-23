@@ -24,13 +24,16 @@ def extract_deployment_info(prompt: str) -> Dict:
         
         Return the information in JSON format with these fields:
         - repo_url: The GitHub repository URL (null if not found)
-        - environment: Target environment (dev, qa, beta, prod, staging)
+        - environment: Target environment (dev, qa, beta, prod, staging) or null if not specified
         - deployment_type: Type of deployment (web app, api, static site, etc.)
         - description: Detailed description of what to deploy
         - requirements: Any specific requirements mentioned
+        - needs_repo_url: true if repository URL is missing and should be requested
+        - needs_environment: true if environment is missing and should be requested
         
-        If the user doesn't specify an environment, default to 'dev'.
-        If no repository is mentioned, return null for repo_url.
+        If no repository is mentioned, set needs_repo_url to true.
+        If no environment is mentioned, set needs_environment to true and environment to null.
+        Do NOT default to 'dev' - only set environment if explicitly mentioned.
         """
         
         # Make the API call (for version 0.28.1)
@@ -61,6 +64,13 @@ def extract_deployment_info(prompt: str) -> Dict:
             # Fallback to regex parsing if JSON parsing fails
             result = fallback_parse(prompt)
         
+        # Add missing fields if not present
+        if 'needs_repo_url' not in result:
+            result['needs_repo_url'] = result.get('repo_url') is None
+        
+        if 'needs_environment' not in result:
+            result['needs_environment'] = result.get('environment') is None
+        
         return result
         
     except Exception as e:
@@ -86,7 +96,7 @@ def fallback_parse(prompt: str) -> Dict:
         'dev': r'\b(dev|development|local)\b'
     }
     
-    environment = 'dev'  # default
+    environment = None  # Don't default to dev
     for env, pattern in env_patterns.items():
         if re.search(pattern, prompt, re.IGNORECASE):
             environment = env
@@ -97,7 +107,9 @@ def fallback_parse(prompt: str) -> Dict:
         'environment': environment,
         'deployment_type': 'web application',
         'description': prompt,
-        'requirements': None
+        'requirements': None,
+        'needs_repo_url': repo_url is None,
+        'needs_environment': environment is None
     }
 
 def parse_prompt(prompt: str) -> str:
