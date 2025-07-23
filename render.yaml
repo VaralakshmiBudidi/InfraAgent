@@ -1,0 +1,35 @@
+services:
+  # Backend API Service
+  - type: web
+    name: infraagent-backend
+    env: python
+    plan: free
+    buildCommand: pip install -r backend/requirements.txt
+    startCommand: cd backend && uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.0
+      - key: ENVIRONMENT
+        value: production
+      - key: DEBUG
+        value: false
+      - key: WEBHOOK_URL
+        value: https://infraagent-backend.onrender.com/webhook/github
+      - key: DEPLOYMENT_DIR
+        value: /tmp/deployments
+      # Optional: Add your GitHub token if you want webhook functionality
+      # - key: GITHUB_TOKEN
+      #   value: your_github_token_here
+      # - key: WEBHOOK_SECRET
+      #   value: your_webhook_secret_here
+
+  # Frontend Service
+  - type: web
+    name: infraagent-frontend
+    env: static
+    plan: free
+    buildCommand: cd frontend && npm install && npm run build
+    staticPublishPath: frontend/build
+    envVars:
+      - key: REACT_APP_API_URL
+        value: https://infraagent-backend.onrender.com 
