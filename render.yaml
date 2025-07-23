@@ -19,6 +19,8 @@ services:
         value: /tmp/deployments
       - key: OPENAI_API_KEY
         sync: false  # Set this manually in Render dashboard
+      - key: RENDER_API_KEY
+        sync: false  # Set this manually in Render dashboard
       # Optional: Add your GitHub token if you want webhook functionality
       # - key: GITHUB_TOKEN
       #   value: your_github_token_here

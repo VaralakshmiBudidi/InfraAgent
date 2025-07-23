@@ -5,6 +5,7 @@ from app.models.deployment import DeploymentRequest, DeploymentResponse, Deploym
 from app.utils.github import validate_repo_url, setup_webhook
 from app.services.deployment_storage import deployment_storage
 from app.utils.ai_prompt import extract_deployment_info
+from app.services.render_deployment import render_deployment_service
 
 async def create_deployment(request: DeploymentRequest) -> DeploymentResponse:
     """
@@ -67,8 +68,15 @@ async def create_deployment(request: DeploymentRequest) -> DeploymentResponse:
         if repo_url:
             setup_webhook(repo_url)
         
-        # Step 8: Simulate deployment process
-        await simulate_deployment(deployment_id, repo_url, environment, deployment_type)
+        # Step 8: Deploy to Render
+        deployment_url = await render_deployment_service.deploy_to_render(
+            repo_url=repo_url,
+            environment=environment,
+            deployment_id=deployment_id
+        )
+        
+        # Update deployment record with URL
+        deployment_storage.update_deployment_url(deployment_id, deployment_url)
         
         return DeploymentResponse(
             deployment_id=deployment_id,

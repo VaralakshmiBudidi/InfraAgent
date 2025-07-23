@@ -12,6 +12,8 @@ class Environment(str, Enum):
 class DeploymentStatus(str, Enum):
     pending = "pending"
     in_progress = "in_progress"
+    building = "building"
+    deploying = "deploying"
     completed = "completed"
     failed = "failed"
     cancelled = "cancelled"
@@ -45,6 +47,12 @@ class DeploymentResponse(BaseModel):
     message: str
     extracted_info: dict  # AI-extracted information
 
+class BuildLog(BaseModel):
+    timestamp: datetime
+    level: str  # "info", "warning", "error"
+    message: str
+    step: str  # "cloning", "building", "deploying"
+
 class DeploymentRecord(BaseModel):
     id: str
     repo_url: Optional[str] = None
@@ -58,6 +66,10 @@ class DeploymentRecord(BaseModel):
     completed_at: Optional[datetime] = None
     error_message: Optional[str] = None
     deployment_dir: Optional[str] = None
+    deployment_url: Optional[str] = None
+    build_logs: List[BuildLog] = []
+    render_service_id: Optional[str] = None
+    webhook_configured: bool = False
 
 class DeploymentListResponse(BaseModel):
     deployments: List[DeploymentRecord]
@@ -66,3 +78,9 @@ class DeploymentListResponse(BaseModel):
 class RollbackRequest(BaseModel):
     deployment_id: str
     reason: Optional[str] = None
+
+class WebhookPayload(BaseModel):
+    ref: str
+    repository: dict
+    commits: List[dict]
+    head_commit: dict

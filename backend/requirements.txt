@@ -5,3 +5,4 @@ requests
 pydantic
 pydantic-settings
 openai
+gitpython

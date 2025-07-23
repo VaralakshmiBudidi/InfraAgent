@@ -7,6 +7,8 @@ const DeploymentDashboard = () => {
   const [error, setError] = useState(null);
   const [selectedDeployment, setSelectedDeployment] = useState(null);
   const [filter, setFilter] = useState('all'); // all, dev, qa, beta, prod
+  const [showLogs, setShowLogs] = useState(false);
+  const [buildLogs, setBuildLogs] = useState([]);
 
   const API_BASE = process.env.REACT_APP_API_URL || 'https://infraagent.onrender.com';
 
@@ -68,6 +70,25 @@ const DeploymentDashboard = () => {
 
   const refreshDeployments = () => {
     fetchDeployments();
+  };
+
+  const fetchBuildLogs = async (deploymentId) => {
+    try {
+      const response = await fetch(`${API_BASE}/deploy/logs/${deploymentId}`);
+      if (!response.ok) {
+        throw new Error('Failed to fetch build logs');
+      }
+      const data = await response.json();
+      setBuildLogs(data.build_logs);
+      setShowLogs(true);
+    } catch (err) {
+      console.error('Error fetching build logs:', err);
+    }
+  };
+
+  const closeLogs = () => {
+    setShowLogs(false);
+    setBuildLogs([]);
   };
 
   if (loading) {
@@ -196,6 +217,29 @@ const DeploymentDashboard = () => {
                     <span className="error-message">{deployment.error_message}</span>
                   </div>
                 )}
+                
+                <div className="deployment-actions">
+                  <button 
+                    className="logs-btn"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      fetchBuildLogs(deployment.id);
+                    }}
+                  >
+                    📋 View Logs
+                  </button>
+                  {deployment.deployment_url && (
+                    <a 
+                      href={deployment.deployment_url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="visit-btn"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      🌐 Visit App
+                    </a>
+                  )}
+                </div>
               </div>
             </div>
           ))}
@@ -276,6 +320,40 @@ const DeploymentDashboard = () => {
                   </div>
                 </div>
               )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Build Logs Modal */}
+      {showLogs && (
+        <div className="modal-overlay" onClick={closeLogs}>
+          <div className="modal-content logs-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h2>Build Logs</h2>
+              <button className="close-btn" onClick={closeLogs}>×</button>
+            </div>
+            <div className="modal-body">
+              <div className="logs-container">
+                {buildLogs.length === 0 ? (
+                  <p className="no-logs">No build logs available yet.</p>
+                ) : (
+                  buildLogs.map((log, index) => (
+                    <div key={index} className={`log-entry log-${log.level}`}>
+                      <div className="log-header">
+                        <span className="log-timestamp">
+                          {new Date(log.timestamp).toLocaleTimeString()}
+                        </span>
+                        <span className="log-step">{log.step}</span>
+                        <span className={`log-level log-${log.level}`}>
+                          {log.level.toUpperCase()}
+                        </span>
+                      </div>
+                      <div className="log-message">{log.message}</div>
+                    </div>
+                  ))
+                )}
+              </div>
             </div>
           </div>
         </div>
