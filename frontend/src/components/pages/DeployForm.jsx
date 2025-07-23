@@ -1,186 +1,172 @@
-import { useState } from 'react';
-import axios from '../../api';
+import React, { useState } from 'react';
 import './DeployForm.css';
 
-function DeployForm() {
-    const [formData, setFormData] = useState({
-        prompt: '',
-        repoUrl: '',
-        environment: ''
-    });
-    const [isLoading, setIsLoading] = useState(false);
-    const [response, setResponse] = useState(null);
-    const [error, setError] = useState('');
-    const [missingFields, setMissingFields] = useState([]);
+const DeployForm = () => {
+  const [formData, setFormData] = useState({
+    prompt: ''
+  });
+  const [loading, setLoading] = useState(false);
+  const [response, setResponse] = useState(null);
+  const [error, setError] = useState(null);
+  const [missingFields, setMissingFields] = useState([]);
 
-    const environments = [
-        { value: 'dev', label: 'Development', color: '#10B981' },
-        { value: 'qa', label: 'QA/Testing', color: '#F59E0B' },
-        { value: 'beta', label: 'Beta/Staging', color: '#3B82F6' },
-        { value: 'prod', label: 'Production', color: '#EF4444' }
-    ];
+  const API_BASE = process.env.REACT_APP_API_URL || 'http://localhost:8000';
 
-    const handleInputChange = (field, value) => {
-        setFormData(prev => ({ ...prev, [field]: value }));
-        // Clear error when user starts typing
-        if (error) setError('');
-        if (missingFields.length > 0) setMissingFields([]);
-    };
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+    
+    // Clear error when user starts typing
+    if (error) setError(null);
+    if (missingFields.includes(name)) {
+      setMissingFields(prev => prev.filter(field => field !== name));
+    }
+  };
 
-    const validateForm = () => {
-        const missing = [];
-        if (!formData.prompt.trim()) missing.push('deployment description');
-        if (!formData.repoUrl.trim()) missing.push('GitHub repository URL');
-        if (!formData.environment) missing.push('environment');
-        
-        setMissingFields(missing);
-        return missing.length === 0;
-    };
+  const validateForm = () => {
+    const missing = [];
+    if (!formData.prompt.trim()) missing.push('prompt');
+    setMissingFields(missing);
+    return missing.length === 0;
+  };
 
-    const handleDeploy = async () => {
-        if (!validateForm()) {
-            setError(`Please provide: ${missingFields.join(', ')}`);
-            return;
-        }
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    
+    if (!validateForm()) {
+      return;
+    }
 
-        try {
-            setIsLoading(true);
-            setError('');
-            setResponse(null);
+    setLoading(true);
+    setError(null);
+    setResponse(null);
 
-            const res = await axios.post('/deploy', {
-                prompt: formData.prompt,
-                repo_url: formData.repoUrl,
-                environment: formData.environment
-            });
+    try {
+      const response = await fetch(`${API_BASE}/deploy/`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          prompt: formData.prompt
+        })
+      });
 
-            setResponse(res.data);
-        } catch (err) {
-            if (err.response?.status === 400) {
-                setError(err.response.data.detail || 'Invalid request. Please check your inputs.');
-            } else {
-                setError('Something went wrong. Please try again.');
-            }
-        } finally {
-            setIsLoading(false);
-        }
-    };
+      const data = await response.json();
 
-    const handleQuickPrompt = (template) => {
-        setFormData(prev => ({ ...prev, prompt: template }));
-    };
+      if (!response.ok) {
+        throw new Error(data.detail || 'Deployment failed');
+      }
 
-    return (
-        <div className="deploy-container">
-            <div className="deploy-card">
-                <div className="header">
-                    <h1>🚀 InfraAgent</h1>
-                    <p>Deploy your applications with AI-powered infrastructure management</p>
-                </div>
+      setResponse(data);
+      setFormData({ prompt: '' }); // Reset form on success
+      
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-                <div className="form-section">
-                    <label className="form-label">
-                        <span className="label-text">Deployment Description</span>
-                        <span className="required">*</span>
-                    </label>
-                    <textarea
-                        className={`form-input ${missingFields.includes('deployment description') ? 'error' : ''}`}
-                        placeholder="Describe what you want to deploy (e.g., 'Deploy the user authentication service to production')"
-                        value={formData.prompt}
-                        onChange={(e) => handleInputChange('prompt', e.target.value)}
-                        rows={4}
-                    />
-                    
-                    <div className="quick-prompts">
-                        <span className="quick-label">Quick templates:</span>
-                        <button 
-                            className="quick-btn"
-                            onClick={() => handleQuickPrompt('Deploy the main application to production')}
-                        >
-                            Production Deploy
-                        </button>
-                        <button 
-                            className="quick-btn"
-                            onClick={() => handleQuickPrompt('Deploy the API service to development')}
-                        >
-                            Dev Deploy
-                        </button>
-                        <button 
-                            className="quick-btn"
-                            onClick={() => handleQuickPrompt('Deploy the frontend to staging')}
-                        >
-                            Staging Deploy
-                        </button>
-                    </div>
-                </div>
-
-                <div className="form-section">
-                    <label className="form-label">
-                        <span className="label-text">GitHub Repository URL</span>
-                        <span className="required">*</span>
-                    </label>
-                    <input
-                        type="url"
-                        className={`form-input ${missingFields.includes('GitHub repository URL') ? 'error' : ''}`}
-                        placeholder="https://github.com/username/repository"
-                        value={formData.repoUrl}
-                        onChange={(e) => handleInputChange('repoUrl', e.target.value)}
-                    />
-                </div>
-
-                <div className="form-section">
-                    <label className="form-label">
-                        <span className="label-text">Environment</span>
-                        <span className="required">*</span>
-                    </label>
-                    <div className="environment-grid">
-                        {environments.map((env) => (
-                            <button
-                                key={env.value}
-                                className={`env-btn ${formData.environment === env.value ? 'selected' : ''} ${missingFields.includes('environment') ? 'error' : ''}`}
-                                onClick={() => handleInputChange('environment', env.value)}
-                                style={{ '--env-color': env.color }}
-                            >
-                                <div className="env-dot" style={{ backgroundColor: env.color }}></div>
-                                <span>{env.label}</span>
-                            </button>
-                        ))}
-                    </div>
-                </div>
-
-                <button 
-                    className={`deploy-btn ${isLoading ? 'loading' : ''}`}
-                    onClick={handleDeploy}
-                    disabled={isLoading}
-                >
-                    {isLoading ? (
-                        <>
-                            <div className="spinner"></div>
-                            Deploying...
-                        </>
-                    ) : (
-                        '🚀 Deploy Now'
-                    )}
-                </button>
-
-                {error && (
-                    <div className="error-message">
-                        <span className="error-icon">⚠️</span>
-                        {error}
-                    </div>
-                )}
-
-                {response && (
-                    <div className="response-section">
-                        <h3>✅ Deployment Response</h3>
-                        <pre className="response-content">
-                            {JSON.stringify(response, null, 2)}
-                        </pre>
-                    </div>
-                )}
-            </div>
+  return (
+    <div className="deploy-container">
+      <div className="deploy-card">
+        <div className="deploy-header">
+          <h1>🚀 AI-Powered Deployment</h1>
+          <p>Just describe what you want to deploy, and AI will handle the rest!</p>
         </div>
-    );
-}
+
+        <form onSubmit={handleSubmit} className="deploy-form">
+          <div className="form-group">
+            <label htmlFor="prompt" className="form-label">
+              What would you like to deploy?
+            </label>
+            <textarea
+              id="prompt"
+              name="prompt"
+              value={formData.prompt}
+              onChange={handleInputChange}
+              placeholder="Describe your deployment request in natural language. For example: 'Deploy my React app from https://github.com/username/my-app to production'"
+              className={`form-input ${missingFields.includes('prompt') ? 'error' : ''}`}
+              rows={4}
+              disabled={loading}
+            />
+            {missingFields.includes('prompt') && (
+              <span className="error-message">Please describe what you want to deploy</span>
+            )}
+          </div>
+
+          <button
+            type="submit"
+            className={`deploy-btn ${loading ? 'loading' : ''}`}
+            disabled={loading}
+          >
+            {loading ? (
+              <>
+                <span className="spinner"></span>
+                Analyzing and Deploying...
+              </>
+            ) : (
+              '🚀 Deploy Now'
+            )}
+          </button>
+        </form>
+
+        {error && (
+          <div className="error-container">
+            <h3>❌ Deployment Failed</h3>
+            <p>{error}</p>
+            <button onClick={() => setError(null)} className="dismiss-btn">
+              Dismiss
+            </button>
+          </div>
+        )}
+
+        {response && (
+          <div className="success-container">
+            <h3>✅ Deployment Initiated!</h3>
+            <div className="response-details">
+              <p><strong>Deployment ID:</strong> {response.deployment_id}</p>
+              <p><strong>Status:</strong> {response.status}</p>
+              <p><strong>Message:</strong> {response.message}</p>
+              
+              {response.extracted_info && (
+                <div className="ai-extracted-info">
+                  <h4>🤖 AI Extracted Information:</h4>
+                  <div className="info-grid">
+                    <div className="info-item">
+                      <span className="info-label">Repository:</span>
+                      <span className="info-value">{response.extracted_info.repo_url || 'Not found'}</span>
+                    </div>
+                    <div className="info-item">
+                      <span className="info-label">Environment:</span>
+                      <span className="info-value">{response.extracted_info.environment}</span>
+                    </div>
+                    <div className="info-item">
+                      <span className="info-label">Type:</span>
+                      <span className="info-value">{response.extracted_info.deployment_type}</span>
+                    </div>
+                    {response.extracted_info.requirements && (
+                      <div className="info-item">
+                        <span className="info-label">Requirements:</span>
+                        <span className="info-value">{response.extracted_info.requirements}</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+            <button onClick={() => setResponse(null)} className="dismiss-btn">
+              Dismiss
+            </button>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
 
 export default DeployForm;
