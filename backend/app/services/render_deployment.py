@@ -11,6 +11,7 @@ class RenderDeploymentService:
     def __init__(self):
         self.render_api_key = os.getenv('RENDER_API_KEY')
         self.render_api_base = "https://api.render.com/v1"
+        self.render_region = os.getenv('RENDER_REGION', 'oregon')  # Configurable region
         
     async def deploy_to_render(self, repo_url: str, environment: str, deployment_id: str) -> str:
         """
@@ -115,7 +116,7 @@ class RenderDeploymentService:
             "type": "web_service",
             "env": service_config["env"],
             "plan": "free",
-            "region": "oregon",
+            "region": self.render_region,
             "repo": repo_url,
             "branch": "main",
             "buildCommand": service_config["build_command"],

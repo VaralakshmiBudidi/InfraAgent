@@ -69,10 +69,17 @@ async def github_webhook(request: Request):
         # Get the webhook payload
         payload = await request.json()
         
-        # Extract repository information
-        repo_url = f"https://github.com/{payload['repository']['full_name']}"
-        commit_message = payload['head_commit']['message']
-        commit_id = payload['head_commit']['id']
+        # Validate payload structure
+        if not payload or 'repository' not in payload or 'head_commit' not in payload:
+            raise HTTPException(status_code=400, detail="Invalid webhook payload structure")
+        
+        # Extract repository information with validation
+        try:
+            repo_url = f"https://github.com/{payload['repository']['full_name']}"
+            commit_message = payload['head_commit']['message']
+            commit_id = payload['head_commit']['id']
+        except KeyError as e:
+            raise HTTPException(status_code=400, detail=f"Missing required field in webhook payload: {str(e)}")
         
         print(f"🔔 GitHub webhook received for {repo_url}")
         print(f"📝 Commit: {commit_message} ({commit_id})")

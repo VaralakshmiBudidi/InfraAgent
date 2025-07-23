@@ -1,10 +1,25 @@
 import requests
 from app.config import settings
 
+import re
+
 def validate_repo_url(url) -> bool:
+    """
+    Validate GitHub repository URL format and basic structure.
+    """
     # Convert HttpUrl to string if needed
     url_str = str(url) if hasattr(url, '__str__') else url
-    return url_str.startswith("https://github.com/")
+    
+    # Check if it's a valid GitHub URL format
+    if not url_str.startswith("https://github.com/"):
+        return False
+    
+    # Validate URL structure: https://github.com/owner/repo
+    github_pattern = r'^https://github\.com/[a-zA-Z0-9._-]+/[a-zA-Z0-9._-]+/?$'
+    if not re.match(github_pattern, url_str):
+        return False
+    
+    return True
 
 def setup_webhook(repo_url):
     print(f"Setting up webhook for {repo_url}")

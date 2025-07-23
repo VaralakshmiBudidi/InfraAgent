@@ -1,7 +1,7 @@
 import os
 import json
 from typing import Dict, Optional
-import openai
+from openai import OpenAI
 
 def extract_deployment_info(prompt: str) -> Dict:
     """
@@ -9,8 +9,12 @@ def extract_deployment_info(prompt: str) -> Dict:
     Returns a dictionary with repo_url, environment, and other deployment details.
     """
     try:
-        # Initialize OpenAI client (for version 0.28.1)
-        openai.api_key = os.getenv('OPENAI_API_KEY')
+        # Initialize OpenAI client (v1.x syntax)
+        api_key = os.getenv('OPENAI_API_KEY')
+        if not api_key:
+            raise Exception("OPENAI_API_KEY not found in environment variables")
+        
+        client = OpenAI(api_key=api_key)
         
         # Create a structured prompt for the AI
         system_prompt = """
@@ -36,8 +40,8 @@ def extract_deployment_info(prompt: str) -> Dict:
         Do NOT default to 'dev' - only set environment if explicitly mentioned.
         """
         
-        # Make the API call (for version 0.28.1)
-        response = openai.ChatCompletion.create(
+        # Make the API call (v1.x syntax)
+        response = client.chat.completions.create(
             model="gpt-3.5-turbo",
             messages=[
                 {"role": "system", "content": system_prompt},

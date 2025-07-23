@@ -1,5 +1,6 @@
 import hmac
 import hashlib
+import json
 from fastapi import APIRouter, Request, Header, HTTPException
 from app.config import settings
 
@@ -24,15 +25,29 @@ async def github_webhook(
     request: Request,
     x_hub_signature_256: str = Header(None)
 ):
-    body = await request.body()
+    try:
+        body = await request.body()
 
-    if not verify_signature(body, x_hub_signature_256):
-        raise HTTPException(status_code=403, detail="Invalid signature")
+        if not verify_signature(body, x_hub_signature_256):
+            raise HTTPException(status_code=403, detail="Invalid signature")
 
-    payload = await request.json()
-    repo_name = payload.get("repository", {}).get("full_name")
+        payload = await request.json()
+        
+        # Validate payload structure
+        if not payload or 'repository' not in payload:
+            raise HTTPException(status_code=400, detail="Invalid webhook payload")
+        
+        repo_name = payload.get("repository", {}).get("full_name")
+        if not repo_name:
+            raise HTTPException(status_code=400, detail="Repository name not found in payload")
 
-    print(f"✅ Webhook received from repo: {repo_name}")
-    # TODO: Redeploy logic here
-    return {"status": "ok"}
+        print(f"✅ Webhook received from repo: {repo_name}")
+        # TODO: Redeploy logic here
+        return {"status": "ok", "repository": repo_name}
+        
+    except json.JSONDecodeError:
+        raise HTTPException(status_code=400, detail="Invalid JSON payload")
+    except Exception as e:
+        print(f"❌ Error processing webhook: {str(e)}")
+        raise HTTPException(status_code=500, detail="Internal server error")
 

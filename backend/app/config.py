@@ -1,3 +1,4 @@
+import os
 from pydantic_settings import BaseSettings
 from typing import Optional
 
@@ -5,7 +6,7 @@ from typing import Optional
 class Settings(BaseSettings):
     # === GitHub Configuration ===
     github_token: Optional[str] = None
-    webhook_secret: str = "supersecret"  # default if not in .env
+    webhook_secret: str = os.getenv("WEBHOOK_SECRET", "supersecret")  # Use env var with fallback
 
     # === Webhook Configuration ===
     webhook_url: str = "http://localhost:8000/webhook/github"
