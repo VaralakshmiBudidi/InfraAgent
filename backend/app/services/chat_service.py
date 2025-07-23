@@ -70,24 +70,24 @@ def generate_ai_response(user_message: str, context: str) -> Dict:
         openai.api_key = os.getenv('OPENAI_API_KEY')
         
         system_prompt = """
-        You are InfraAgent, a helpful AI assistant for infrastructure deployment. You can help users deploy their applications by asking for necessary information.
+        You are InfraAgent, a friendly and helpful AI assistant. You can help with general questions, coding, and infrastructure deployment.
 
         Your capabilities:
-        1. Help users deploy applications to different environments (dev, qa, beta, prod)
-        2. Ask for GitHub repository URLs when needed
-        3. Ask for target environments when needed
+        1. Answer general questions and have casual conversations
+        2. Help with coding and technical questions
+        3. Help users deploy applications to different environments (dev, qa, beta, prod)
         4. Provide helpful suggestions and examples
-        5. Be conversational and friendly
+        5. Be conversational, friendly, and engaging like ChatGPT
 
-        When a user wants to deploy something:
-        - If they don't provide a repository URL, ask for it
-        - If they don't specify an environment, ask for it
+        When users want to deploy something:
+        - If they don't provide a repository URL, ask for it naturally
+        - If they don't specify an environment, ask for it conversationally
         - Provide helpful examples
         - Be conversational and helpful
 
         Available environments: dev, qa, beta, prod
 
-        Respond in a conversational, helpful manner. If you need more information, ask for it directly.
+        IMPORTANT: Be conversational and friendly. Don't just ask for information - engage in natural conversation. If someone says "hi" or asks general questions, respond naturally like ChatGPT would.
         """
         
         # Create the conversation context
@@ -110,7 +110,7 @@ def generate_ai_response(user_message: str, context: str) -> Dict:
         
         ai_message = response.choices[0].message.content.strip()
         
-        # Analyze if we need more information
+        # Only analyze for deployment-specific needs, not general chat
         needs_info = analyze_needs_information(user_message, ai_message)
         
         return {
@@ -130,6 +130,7 @@ def generate_ai_response(user_message: str, context: str) -> Dict:
 def analyze_needs_information(user_message: str, ai_response: str) -> Dict:
     """
     Analyze if the AI response indicates we need more information from the user.
+    Only trigger for explicit deployment requests.
     """
     user_lower = user_message.lower()
     ai_lower = ai_response.lower()
@@ -138,25 +139,25 @@ def analyze_needs_information(user_message: str, ai_response: str) -> Dict:
     input_type = None
     suggestions = []
     
-    # Check if AI is asking for repository URL
-    if any(phrase in ai_lower for phrase in ["repository", "github", "repo", "url"]):
-        needs_input = True
-        input_type = "repo_url"
-        suggestions = [
-            "https://github.com/username/my-app",
-            "https://github.com/VaralakshmiBudidi/sample-app"
-        ]
-    
-    # Check if AI is asking for environment
-    elif any(phrase in ai_lower for phrase in ["environment", "where", "which environment"]):
-        needs_input = True
-        input_type = "environment"
-        suggestions = ["dev", "qa", "beta", "prod"]
-    
-    # Check if user mentioned deployment but missing info
-    elif any(phrase in user_lower for phrase in ["deploy", "deployment"]) and not needs_input:
+    # Only analyze if user explicitly mentions deployment
+    if any(phrase in user_lower for phrase in ["deploy", "deployment", "deploy my"]):
+        # Check if AI is asking for repository URL
+        if any(phrase in ai_lower for phrase in ["repository", "github", "repo", "url"]):
+            needs_input = True
+            input_type = "repo_url"
+            suggestions = [
+                "https://github.com/username/my-app",
+                "https://github.com/VaralakshmiBudidi/sample-app"
+            ]
+        
+        # Check if AI is asking for environment
+        elif any(phrase in ai_lower for phrase in ["environment", "where", "which environment"]):
+            needs_input = True
+            input_type = "environment"
+            suggestions = ["dev", "qa", "beta", "prod"]
+        
         # Check if repository URL is missing
-        if "github.com" not in user_lower:
+        elif "github.com" not in user_lower:
             needs_input = True
             input_type = "repo_url"
             suggestions = [
@@ -165,8 +166,7 @@ def analyze_needs_information(user_message: str, ai_response: str) -> Dict:
             ]
         
         # Check if environment is missing
-        env_keywords = ["dev", "qa", "beta", "prod", "production", "staging"]
-        if not any(env in user_lower for env in env_keywords):
+        elif not any(env in user_lower for env in ["dev", "qa", "beta", "prod", "production", "staging"]):
             needs_input = True
             input_type = "environment"
             suggestions = ["dev", "qa", "beta", "prod"]

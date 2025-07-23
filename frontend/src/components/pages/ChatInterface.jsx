@@ -8,7 +8,7 @@ const ChatInterface = () => {
   const [conversationId, setConversationId] = useState(null);
   const messagesEndRef = useRef(null);
 
-  const API_BASE = process.env.REACT_APP_API_URL || 'https://infraagent-backend.onrender.com';
+  const API_BASE = process.env.REACT_APP_API_URL || 'https://infraagent.onrender.com';
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });

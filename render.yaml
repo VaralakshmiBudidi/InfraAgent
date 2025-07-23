@@ -1,7 +1,7 @@
 services:
   # Backend API Service
   - type: web
-    name: infraagent-backend
+    name: infraagent
     env: python
     plan: free
     buildCommand: pip install --no-cache-dir -r backend/requirements.txt
@@ -14,7 +14,7 @@ services:
       - key: DEBUG
         value: false
       - key: WEBHOOK_URL
-        value: https://infraagent-backend.onrender.com/webhook/github
+        value: https://infraagent.onrender.com/webhook/github
       - key: DEPLOYMENT_DIR
         value: /tmp/deployments
       - key: OPENAI_API_KEY
@@ -34,4 +34,4 @@ services:
     staticPublishPath: frontend/build
     envVars:
       - key: REACT_APP_API_URL
-        value: https://infraagent-backend.onrender.com 
+        value: https://infraagent.onrender.com 
