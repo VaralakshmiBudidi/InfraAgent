@@ -9,8 +9,8 @@ def extract_deployment_info(prompt: str) -> Dict:
     Returns a dictionary with repo_url, environment, and other deployment details.
     """
     try:
-        # Initialize OpenAI client
-        client = openai.OpenAI(api_key=os.getenv('OPENAI_API_KEY'))
+        # Initialize OpenAI client (for version 0.28.1)
+        openai.api_key = os.getenv('OPENAI_API_KEY')
         
         # Create a structured prompt for the AI
         system_prompt = """
@@ -33,8 +33,8 @@ def extract_deployment_info(prompt: str) -> Dict:
         If no repository is mentioned, return null for repo_url.
         """
         
-        # Make the API call
-        response = client.chat.completions.create(
+        # Make the API call (for version 0.28.1)
+        response = openai.ChatCompletion.create(
             model="gpt-3.5-turbo",
             messages=[
                 {"role": "system", "content": system_prompt},
