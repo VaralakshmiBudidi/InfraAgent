@@ -12,6 +12,8 @@ origins = [
     "http://localhost:3000",  # Local development
     "https://infraagent-frontend.onrender.com",  # Render frontend
     "https://*.onrender.com",  # Any Render subdomain
+    "https://infraagent.onrender.com",  # Your specific domain
+    "*",  # Allow all origins for testing
 ]
 
 app.add_middleware(
