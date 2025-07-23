@@ -2,7 +2,7 @@ import os
 import json
 import uuid
 from typing import Dict, Optional, List
-import openai
+from openai import OpenAI
 from app.models.deployment import ChatRequest, ChatResponse, ChatMessage, MessageType
 
 class ConversationManager:
@@ -67,7 +67,16 @@ def generate_ai_response(user_message: str, context: str) -> Dict:
     Generate an AI response using OpenAI.
     """
     try:
-        openai.api_key = os.getenv('OPENAI_API_KEY')
+        api_key = os.getenv('OPENAI_API_KEY')
+        
+        if not api_key:
+            print("OPENAI_API_KEY not found in environment variables")
+            return {
+                "message": "Configuration error: OpenAI API key not found. Please contact support.",
+                "needs_input": False
+            }
+        
+        client = OpenAI(api_key=api_key)
         
         system_prompt = """
         You are InfraAgent, a friendly and helpful AI assistant. You can help with general questions, coding, and infrastructure deployment.
@@ -101,7 +110,7 @@ def generate_ai_response(user_message: str, context: str) -> Dict:
         
         messages.append({"role": "user", "content": user_message})
         
-        response = openai.ChatCompletion.create(
+        response = client.chat.completions.create(
             model="gpt-3.5-turbo",
             messages=messages,
             temperature=0.7,

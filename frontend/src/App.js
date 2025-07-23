@@ -2,10 +2,11 @@
 import React, { useState } from 'react';
 import DeployForm from './components/pages/DeployForm';
 import DeploymentDashboard from './components/pages/DeploymentDashboard';
+import ChatInterface from './components/pages/ChatInterface';
 import './App.css';
 
 function App() {
-  const [currentView, setCurrentView] = useState('deploy'); // 'deploy' or 'dashboard'
+  const [currentView, setCurrentView] = useState('chat'); // 'chat', 'deploy', or 'dashboard'
 
   return (
     <div className="App">
@@ -14,6 +15,12 @@ function App() {
           <h1>🚀 InfraAgent</h1>
         </div>
         <div className="nav-links">
+          <button 
+            className={`nav-btn ${currentView === 'chat' ? 'active' : ''}`}
+            onClick={() => setCurrentView('chat')}
+          >
+            💬 Chat
+          </button>
           <button 
             className={`nav-btn ${currentView === 'deploy' ? 'active' : ''}`}
             onClick={() => setCurrentView('deploy')}
@@ -30,7 +37,9 @@ function App() {
       </nav>
 
       <main className="app-main">
-        {currentView === 'deploy' ? (
+        {currentView === 'chat' ? (
+          <ChatInterface />
+        ) : currentView === 'deploy' ? (
           <DeployForm />
         ) : (
           <DeploymentDashboard />

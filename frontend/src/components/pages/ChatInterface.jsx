@@ -110,15 +110,6 @@ const ChatInterface = () => {
             <div className="welcome-content">
               <h3>👋 Hello! I'm InfraAgent</h3>
               <p>I can help you deploy your applications. Just tell me what you need!</p>
-              <div className="example-prompts">
-                <h4>💡 Try saying:</h4>
-                <ul>
-                  <li>"Hi, I need help deploying my app"</li>
-                  <li>"Deploy my React app to production"</li>
-                  <li>"I want to deploy to the dev environment"</li>
-                  <li>"Can you help me deploy from GitHub?"</li>
-                </ul>
-              </div>
             </div>
           </div>
         )}
