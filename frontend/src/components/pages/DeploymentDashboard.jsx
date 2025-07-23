@@ -8,7 +8,7 @@ const DeploymentDashboard = () => {
   const [selectedDeployment, setSelectedDeployment] = useState(null);
   const [filter, setFilter] = useState('all'); // all, dev, qa, beta, prod
 
-  const API_BASE = process.env.REACT_APP_API_URL || 'http://localhost:8000';
+  const API_BASE = process.env.REACT_APP_API_URL || 'https://infraagent-backend.onrender.com';
 
   useEffect(() => {
     fetchDeployments();

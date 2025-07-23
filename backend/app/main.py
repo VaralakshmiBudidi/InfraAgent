@@ -3,7 +3,7 @@ load_dotenv()  # Load environment variables from .env first
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from app.routers import deploy, webhook
+from app.routers import deploy, webhook, chat
 
 app = FastAPI(title="InfraAgent", version="1.0.0")
 
@@ -27,6 +27,7 @@ app.add_middleware(
 # Include route modules
 app.include_router(deploy.router, prefix="/deploy")
 app.include_router(webhook.router, prefix="/webhook")
+app.include_router(chat.router, prefix="/chat")
 
 @app.get("/")
 def root():

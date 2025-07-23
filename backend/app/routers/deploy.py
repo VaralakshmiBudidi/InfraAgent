@@ -13,22 +13,29 @@ async def deploy(request: DeploymentRequest):
     The user only needs to provide a natural language description of what they want to deploy.
     """
     try:
+        print(f"🚀 Deployment request received: {request.prompt}")
+        
         # Validate that prompt is provided
         if not request.prompt or not request.prompt.strip():
+            print("❌ Empty prompt received")
             raise HTTPException(
                 status_code=400, 
                 detail="Please provide a description of what you want to deploy."
             )
         
         # Create deployment using AI extraction
+        print("🤖 Starting AI extraction...")
         result = await create_deployment(request=request)
+        print(f"✅ Deployment result: {result}")
         return result
         
     except ValueError as e:
+        print(f"❌ ValueError in deployment: {str(e)}")
         raise HTTPException(status_code=400, detail=str(e))
     except HTTPException:
         raise
     except Exception as e:
+        print(f"❌ Exception in deployment: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
 
 @router.get("/status/{deployment_id}")

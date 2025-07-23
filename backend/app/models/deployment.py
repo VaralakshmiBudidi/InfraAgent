@@ -16,6 +16,26 @@ class DeploymentStatus(str, Enum):
     failed = "failed"
     cancelled = "cancelled"
 
+class MessageType(str, Enum):
+    user = "user"
+    ai = "ai"
+
+class ChatMessage(BaseModel):
+    type: MessageType
+    content: str
+    timestamp: datetime = datetime.utcnow()
+
+class ChatRequest(BaseModel):
+    message: str
+    conversation_id: Optional[str] = None
+
+class ChatResponse(BaseModel):
+    message: str
+    conversation_id: str
+    needs_input: bool = False
+    input_type: Optional[str] = None  # "repo_url", "environment", etc.
+    suggestions: Optional[List[str]] = None
+
 class DeploymentRequest(BaseModel):
     prompt: str  # Only require the user's natural language prompt
 

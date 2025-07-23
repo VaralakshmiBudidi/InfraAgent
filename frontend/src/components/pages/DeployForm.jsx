@@ -10,7 +10,7 @@ const DeployForm = () => {
   const [error, setError] = useState(null);
   const [missingFields, setMissingFields] = useState([]);
 
-  const API_BASE = process.env.REACT_APP_API_URL || 'http://localhost:8000';
+  const API_BASE = process.env.REACT_APP_API_URL || 'https://infraagent-backend.onrender.com';
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -62,13 +62,150 @@ const DeployForm = () => {
       }
 
       setResponse(data);
-      setFormData({ prompt: '' }); // Reset form on success
+      
+      // Only reset form if deployment was successful
+      if (data.status === 'success') {
+        setFormData({ prompt: '' });
+      }
       
     } catch (err) {
       setError(err.message);
     } finally {
       setLoading(false);
     }
+  };
+
+  const getResponseContainerClass = () => {
+    if (response.status === 'needs_repo_url' || response.status === 'needs_environment') {
+      return 'warning-container';
+    }
+    return 'success-container';
+  };
+
+  const renderResponseContent = () => {
+    if (response.status === 'needs_repo_url') {
+      return (
+        <>
+          <h3>🤖 AI Needs Repository URL</h3>
+          <div className="response-details">
+            <p><strong>Message:</strong> {response.message}</p>
+            
+            {response.extracted_info && (
+              <div className="ai-extracted-info">
+                <h4>✅ AI Extracted Information:</h4>
+                <div className="info-grid">
+                  <div className="info-item">
+                    <span className="info-label">Environment:</span>
+                    <span className="info-value">{response.extracted_info.environment || '❌ Missing'}</span>
+                  </div>
+                  <div className="info-item">
+                    <span className="info-label">Type:</span>
+                    <span className="info-value">{response.extracted_info.deployment_type}</span>
+                  </div>
+                  <div className="info-item">
+                    <span className="info-label">Repository:</span>
+                    <span className="info-value">❌ Missing - Please include GitHub URL</span>
+                  </div>
+                </div>
+              </div>
+            )}
+            
+            <div className="suggestion-box">
+              <h4>💡 Try these examples:</h4>
+              <ul>
+                <li>"Deploy my sample app from https://github.com/VaralakshmiBudidi/sample-app to dev"</li>
+                <li>"Deploy the React app from https://github.com/username/my-app to production"</li>
+                <li>"Deploy my API backend from https://github.com/username/api to staging"</li>
+              </ul>
+            </div>
+          </div>
+        </>
+      );
+    }
+
+    if (response.status === 'needs_environment') {
+      return (
+        <>
+          <h3>🤖 AI Needs Environment</h3>
+          <div className="response-details">
+            <p><strong>Message:</strong> {response.message}</p>
+            
+            {response.extracted_info && (
+              <div className="ai-extracted-info">
+                <h4>✅ AI Extracted Information:</h4>
+                <div className="info-grid">
+                  <div className="info-item">
+                    <span className="info-label">Repository:</span>
+                    <span className="info-value">{response.extracted_info.repo_url}</span>
+                  </div>
+                  <div className="info-item">
+                    <span className="info-label">Type:</span>
+                    <span className="info-value">{response.extracted_info.deployment_type}</span>
+                  </div>
+                  <div className="info-item">
+                    <span className="info-label">Environment:</span>
+                    <span className="info-value">❌ Missing - Please specify environment</span>
+                  </div>
+                </div>
+              </div>
+            )}
+            
+            <div className="suggestion-box">
+              <h4>💡 Available Environments:</h4>
+              <ul>
+                <li><strong>dev</strong> - Development environment</li>
+                <li><strong>qa</strong> - Quality Assurance/Testing</li>
+                <li><strong>beta</strong> - Beta/Staging environment</li>
+                <li><strong>prod</strong> - Production environment</li>
+              </ul>
+              <h4>💡 Try these examples:</h4>
+              <ul>
+                <li>"Deploy my app from https://github.com/username/repo to dev"</li>
+                <li>"Deploy to production environment"</li>
+                <li>"Deploy to staging for testing"</li>
+              </ul>
+            </div>
+          </div>
+        </>
+      );
+    }
+
+    return (
+      <>
+        <h3>✅ Deployment Initiated!</h3>
+        <div className="response-details">
+          <p><strong>Deployment ID:</strong> {response.deployment_id}</p>
+          <p><strong>Status:</strong> {response.status}</p>
+          <p><strong>Message:</strong> {response.message}</p>
+          
+          {response.extracted_info && (
+            <div className="ai-extracted-info">
+              <h4>🤖 AI Extracted Information:</h4>
+              <div className="info-grid">
+                <div className="info-item">
+                  <span className="info-label">Repository:</span>
+                  <span className="info-value">{response.extracted_info.repo_url || 'Not found'}</span>
+                </div>
+                <div className="info-item">
+                  <span className="info-label">Environment:</span>
+                  <span className="info-value">{response.extracted_info.environment}</span>
+                </div>
+                <div className="info-item">
+                  <span className="info-label">Type:</span>
+                  <span className="info-value">{response.extracted_info.deployment_type}</span>
+                </div>
+                {response.extracted_info.requirements && (
+                  <div className="info-item">
+                    <span className="info-label">Requirements:</span>
+                    <span className="info-value">{response.extracted_info.requirements}</span>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+        </div>
+      </>
+    );
   };
 
   return (
@@ -126,39 +263,8 @@ const DeployForm = () => {
         )}
 
         {response && (
-          <div className="success-container">
-            <h3>✅ Deployment Initiated!</h3>
-            <div className="response-details">
-              <p><strong>Deployment ID:</strong> {response.deployment_id}</p>
-              <p><strong>Status:</strong> {response.status}</p>
-              <p><strong>Message:</strong> {response.message}</p>
-              
-              {response.extracted_info && (
-                <div className="ai-extracted-info">
-                  <h4>🤖 AI Extracted Information:</h4>
-                  <div className="info-grid">
-                    <div className="info-item">
-                      <span className="info-label">Repository:</span>
-                      <span className="info-value">{response.extracted_info.repo_url || 'Not found'}</span>
-                    </div>
-                    <div className="info-item">
-                      <span className="info-label">Environment:</span>
-                      <span className="info-value">{response.extracted_info.environment}</span>
-                    </div>
-                    <div className="info-item">
-                      <span className="info-label">Type:</span>
-                      <span className="info-value">{response.extracted_info.deployment_type}</span>
-                    </div>
-                    {response.extracted_info.requirements && (
-                      <div className="info-item">
-                        <span className="info-label">Requirements:</span>
-                        <span className="info-value">{response.extracted_info.requirements}</span>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              )}
-            </div>
+          <div className={getResponseContainerClass()}>
+            {renderResponseContent()}
             <button onClick={() => setResponse(null)} className="dismiss-btn">
               Dismiss
             </button>

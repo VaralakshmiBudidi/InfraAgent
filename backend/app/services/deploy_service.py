@@ -16,20 +16,37 @@ async def create_deployment(request: DeploymentRequest) -> DeploymentResponse:
         extracted_info = extract_deployment_info(request.prompt)
         
         repo_url = extracted_info.get('repo_url')
-        environment = extracted_info.get('environment', 'dev')
+        environment = extracted_info.get('environment')
         deployment_type = extracted_info.get('deployment_type', 'web application')
         requirements = extracted_info.get('requirements')
+        needs_repo_url = extracted_info.get('needs_repo_url', False)
+        needs_environment = extracted_info.get('needs_environment', False)
         
         print(f"📋 AI extracted info: {extracted_info}")
         
-        # Step 2: Validate extracted information
-        if not repo_url:
-            raise ValueError("Could not identify a GitHub repository from your request. Please include a repository URL or mention the repository name.")
+        # Step 2: Check if repository URL is needed
+        if needs_repo_url or not repo_url:
+            return DeploymentResponse(
+                deployment_id="",
+                status="needs_repo_url",
+                message="Please provide a GitHub repository URL. For example: 'Deploy my app from https://github.com/username/repo to dev'",
+                extracted_info=extracted_info
+            )
         
+        # Step 3: Check if environment is needed
+        if needs_environment or not environment:
+            return DeploymentResponse(
+                deployment_id="",
+                status="needs_environment",
+                message="Please specify the target environment. For example: 'Deploy my app from https://github.com/username/repo to dev'",
+                extracted_info=extracted_info
+            )
+        
+        # Step 4: Validate extracted information
         if not validate_repo_url(repo_url):
             raise ValueError(f"Invalid GitHub repository URL: {repo_url}")
         
-        # Step 3: Create deployment record
+        # Step 5: Create deployment record
         deployment_id = deployment_storage.create_deployment(
             repo_url=repo_url,
             environment=environment,
@@ -43,14 +60,14 @@ async def create_deployment(request: DeploymentRequest) -> DeploymentResponse:
             deployment.deployment_type = deployment_type
             deployment.requirements = requirements
         
-        # Step 4: Update status to in_progress
+        # Step 6: Update status to in_progress
         deployment_storage.update_deployment_status(deployment_id, DeploymentStatus.in_progress)
         
-        # Step 5: Register webhook with GitHub for future deployments
+        # Step 7: Register webhook with GitHub for future deployments
         if repo_url:
             setup_webhook(repo_url)
         
-        # Step 6: Simulate deployment process
+        # Step 8: Simulate deployment process
         await simulate_deployment(deployment_id, repo_url, environment, deployment_type)
         
         return DeploymentResponse(
